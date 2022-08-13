@@ -5,11 +5,13 @@
 [![Test Coverage](https://codecov.io/gh/willnorris/imageproxy/branch/main/graph/badge.svg)](https://codecov.io/gh/willnorris/imageproxy)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2611/badge)](https://bestpractices.coreinfrastructure.org/projects/2611)
 
+**This fork implements webp encoding.**
+
 imageproxy is a caching image proxy server written in go.  It features:
 
  - basic image adjustments like resizing, cropping, and rotation
  - access control using allowed hosts list or request signing (HMAC-SHA256)
- - support for jpeg, png, webp (decode only), tiff, and gif image formats
+ - support for jpeg, png, webp, tiff, and gif image formats
    (including animated gifs)
  - caching in-memory, on disk, or with Amazon S3, Google Cloud Storage, Azure
    Storage, or Redis
@@ -288,12 +290,12 @@ However, you can use the `scaleUp` command-line flag to allow this to happen:
 
 ### WebP and TIFF support ###
 
-Imageproxy can proxy remote webp images, but they will be served in either jpeg
-or png format (this is because the golang webp library only supports webp
-decoding) if any transformation is requested.  If no format is specified,
-imageproxy will use jpeg by default.  If no transformation is requested (for
-example, if you are just using imageproxy as an SSL proxy) then the original
-webp image will be served as-is without any format conversion.
+Imageproxy can proxy remote webp images and uses `github.com/kolesa-team/go-webp`
+to implement webp encoding. This requires CGO which is outside the scope of
+the upstream project. The quality parameter is also supported, and
+defaults at 100.
+
+Animated webp exports are not supported.
 
 Because so few browsers support tiff images, they will be converted to jpeg by
 default if any transformation is requested. To force encoding as tiff, pass the
@@ -340,17 +342,17 @@ in the [README](https://github.com/oreillymedia/prototype-imageproxy/blob/master
 
 ### Docker ###
 
-A docker image is available at [`ghcr.io/willnorris/imageproxy`](https://github.com/willnorris/imageproxy/pkgs/container/imageproxy).
+A docker image is available at [`zquestz/imageproxy`](https://hub.docker.com/repository/docker/zquestz/imageproxy).
 
 You can run it by
 ```
-docker run -p 8080:8080 ghcr.io/willnorris/imageproxy -addr 0.0.0.0:8080
+docker run -p 8080:8080 zquestz/imageproxy -addr 0.0.0.0:8080
 ```
 
 Or in your Dockerfile:
 
 ```
-ENTRYPOINT ["/app/imageproxy", "-addr 0.0.0.0:8080"]
+ENTRYPOINT ["/go/bin/imageproxy", "-addr 0.0.0.0:8080"]
 ```
 
 If running imageproxy inside docker with a bind-mounted on-disk cache, make sure

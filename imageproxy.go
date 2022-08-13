@@ -516,7 +516,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	if err := resp.Header.WriteSubset(buf, map[string]bool{
 		"Content-Length": true,
 		// exclude Content-Type header if the format may have changed during transformation
-		"Content-Type": opt.Format != "" || resp.Header.Get("Content-Type") == "image/webp" || resp.Header.Get("Content-Type") == "image/tiff",
+		"Content-Type": opt.Format != "" || resp.Header.Get("Content-Type") == "image/tiff",
 	}); err != nil {
 		t.log("error copying headers: %v", err)
 	}

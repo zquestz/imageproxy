@@ -15,6 +15,8 @@ import (
 	"math"
 
 	"github.com/disintegration/imaging"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 	"github.com/muesli/smartcrop"
 	"github.com/muesli/smartcrop/nfnt"
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,6 +29,9 @@ import (
 
 // default compression quality of resized jpegs
 const defaultQuality = 95
+
+// default compression quality of resized webp images
+const defaultQualityWEBP = 100
 
 // maximum distance into image to look for EXIF tags
 const maxExifSize = 1 << 20
@@ -58,8 +63,8 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		}
 	}
 
-	// encode webp and tiff as jpeg by default
-	if format == "tiff" || format == "webp" {
+	// encode tiff as jpeg by default
+	if format == "tiff" {
 		format = "jpeg"
 	}
 
@@ -99,6 +104,21 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		m = transformImage(m, opt)
 		err = png.Encode(buf, m)
 		if err != nil {
+			return nil, err
+		}
+	case "webp":
+		quality := opt.Quality
+		if quality == 0 {
+			quality = defaultQualityWEBP
+		}
+
+		m = transformImage(m, opt)
+		options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, float32(quality))
+		if err != nil {
+			return nil, err
+		}
+
+		if err := webp.Encode(buf, m, options); err != nil {
 			return nil, err
 		}
 	case "tiff":

@@ -1,27 +1,24 @@
-FROM golang:1.17 as build
-LABEL maintainer="Will Norris <will@willnorris.com>"
+# Start from a Debian image with the latest version of Go installed
+# and a workspace (GOPATH) configured at /go.
+FROM golang:1.19
+LABEL maintainer="Josh Ellithorpe <quest@mac.com>"
 
-RUN useradd -u 1001 go
+# Install webp dev libs.
+RUN apt-get update
+RUN apt-get -y upgrade
+RUN apt-get install -y libwebp-dev
 
-WORKDIR /app
+# Copy the local package files to the container's workspace.
+ADD . /go/src/github.com/zquestz/imageproxy
 
-COPY go.mod go.sum ./
-RUN go mod download
+# Switch to the correct working directory.
+WORKDIR /go/src/github.com/zquestz/imageproxy
 
-COPY . .
+# Build the code.
+RUN go install -v ./cmd/imageproxy
 
-RUN CGO_ENABLED=0 GOOS=linux go build -v ./cmd/imageproxy
-
-FROM scratch
-
-COPY --from=build /etc/passwd /etc/passwd
-COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build /app/imageproxy /app/imageproxy
-
-USER go
-
+# Set the start command.
 CMD ["-addr", "0.0.0.0:8080"]
-ENTRYPOINT ["/app/imageproxy"]
+ENTRYPOINT ["/go/bin/imageproxy"]
 
 EXPOSE 8080
